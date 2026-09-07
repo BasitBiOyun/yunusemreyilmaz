@@ -1,6 +1,6 @@
 "use client";
 
-import { CameraControls, Html, RoundedBox } from "@react-three/drei";
+import { CameraControls, RoundedBox } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useEffect, useRef, useState } from "react";
 import type { CameraControls as CameraControlsType } from "camera-controls";
@@ -32,8 +32,6 @@ export function RoomExperience() {
         <RoomScene
           entered={entered}
           focused={focused}
-          section={section}
-          onSectionChange={setSection}
           onFocus={(next = "overview") => {
             setSection(next);
             setFocused(true);
@@ -64,17 +62,44 @@ export function RoomExperience() {
       ) : null}
 
       {entered && focused ? (
-        <button className="monitor-back" onClick={() => setFocused(false)}><span aria-hidden="true">←</span> Back to room</button>
+        <>
+          <MonitorOverlay section={section} onSectionChange={setSection} />
+          <button className="monitor-back" onClick={() => setFocused(false)}><span aria-hidden="true">←</span> Back to room</button>
+        </>
       ) : null}
     </main>
   );
 }
 
-function RoomScene({ entered, focused, section, onSectionChange, onFocus }: {
+function MonitorOverlay({ section, onSectionChange }: { section: string; onSectionChange: (section: string) => void }) {
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    const syncScale = () => {
+      const widthScale = (window.innerWidth * 0.7) / 800;
+      const heightScale = (window.innerHeight * 0.76) / 450;
+      setScale(Math.min(widthScale, heightScale));
+    };
+
+    syncScale();
+    window.addEventListener("resize", syncScale);
+    return () => window.removeEventListener("resize", syncScale);
+  }, []);
+
+  return (
+    <div className="monitor-focus-shell" aria-label="Portfolio computer screen">
+      <div className="monitor-focus-position">
+        <div className="monitor-focus-scale" style={{ transform: `scale(${scale})` }}>
+          <MonitorWorkspace section={section} onSectionChange={onSectionChange} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RoomScene({ entered, focused, onFocus }: {
   entered: boolean;
   focused: boolean;
-  section: string;
-  onSectionChange: (section: string) => void;
   onFocus: (section?: string) => void;
 }) {
   const controls = useRef<CameraControlsType | null>(null);
@@ -95,7 +120,7 @@ function RoomScene({ entered, focused, section, onSectionChange, onFocus }: {
       <pointLight position={[0, 2.45, -0.95]} intensity={7} distance={3.8} decay={2} color="#62d4dc" />
       <RoomShell />
       <Desk />
-      <Monitor focused={focused} section={section} onSectionChange={onSectionChange} onFocus={() => onFocus(section)} />
+      <Monitor focused={focused} onFocus={() => onFocus("overview")} />
       <DeskLamp />
       <WallBoard onClick={() => onFocus("teaching")} />
       <ContactObjects onFocus={onFocus} />
@@ -125,12 +150,7 @@ function Desk() {
   );
 }
 
-function Monitor({ focused, section, onSectionChange, onFocus }: {
-  focused: boolean;
-  section: string;
-  onSectionChange: (section: string) => void;
-  onFocus: () => void;
-}) {
+function Monitor({ focused, onFocus }: { focused: boolean; onFocus: () => void }) {
   return (
     <group
       position={[0, 2.38, -1.42]}
@@ -140,9 +160,6 @@ function Monitor({ focused, section, onSectionChange, onFocus }: {
     >
       <RoundedBox args={[2.92, 1.78, 0.18]} radius={0.09} smoothness={6} castShadow><meshStandardMaterial color="#151a18" roughness={0.25} metalness={0.52} /></RoundedBox>
       <mesh position={[0, 0, 0.095]}><planeGeometry args={[2.62, 1.47]} /><meshStandardMaterial color="#061514" emissive="#0f6568" emissiveIntensity={focused ? 0.75 : 0.38} roughness={0.24} /></mesh>
-      <Html transform center position={[0, 0, 0.105]} scale={0.00327} style={{ pointerEvents: focused ? "auto" : "none" }}>
-        <MonitorWorkspace focused={focused} section={section} onSectionChange={onSectionChange} />
-      </Html>
       <RoundedBox args={[0.15, 0.65, 0.15]} radius={0.035} smoothness={3} position={[0, -1.18, -0.03]} castShadow><meshStandardMaterial color="#222826" metalness={0.5} roughness={0.3} /></RoundedBox>
       <RoundedBox args={[1.14, 0.09, 0.5]} radius={0.05} smoothness={4} position={[0, -1.48, 0.07]} castShadow><meshStandardMaterial color="#1b211f" metalness={0.46} roughness={0.31} /></RoundedBox>
       <mesh position={[1.25, -0.79, 0.1]}><sphereGeometry args={[0.024, 16, 16]} /><meshStandardMaterial color="#78ddc6" emissive="#78ddc6" emissiveIntensity={3} /></mesh>
@@ -150,17 +167,13 @@ function Monitor({ focused, section, onSectionChange, onFocus }: {
   );
 }
 
-function MonitorWorkspace({ focused, section, onSectionChange }: { focused: boolean; section: string; onSectionChange: (section: string) => void }) {
+function MonitorWorkspace({ section, onSectionChange }: { section: string; onSectionChange: (section: string) => void }) {
   const nav = [
     ["overview", "Desk"], ["teaching", "Teaching"], ["translation", "Translation"], ["projects", "Projects"], ["media", "Media"], ["about", "About"],
   ] as const;
 
-  if (!focused) {
-    return <div className="monitor-html-surface"><div className="monitor-idle"><div className="monitor-idle-grid" /><div className="monitor-idle-mark">YY</div><p>LANGUAGE ROOM</p><span>click the screen to enter</span></div></div>;
-  }
-
   return (
-    <div className="monitor-html-surface" onPointerDown={(event) => event.stopPropagation()}>
+    <div className="monitor-html-surface">
       <div className="monitor-os">
         <aside className="monitor-sidebar">
           <div className="monitor-logo">YY</div>
