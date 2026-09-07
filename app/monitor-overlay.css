@@ -1,0 +1,33 @@
+.monitor-focus-shell {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.monitor-focus-position {
+  width: 800px;
+  height: 450px;
+  transform: translateY(-3.4vh);
+  pointer-events: none;
+}
+
+.monitor-focus-scale {
+  width: 800px;
+  height: 450px;
+  transform-origin: center center;
+  pointer-events: auto;
+  will-change: transform;
+}
+
+.monitor-focus-scale .monitor-html-surface {
+  pointer-events: auto;
+}
+
+@media (max-width: 900px) {
+  .monitor-focus-position {
+    transform: translateY(-1.5vh);
+  }
+}
