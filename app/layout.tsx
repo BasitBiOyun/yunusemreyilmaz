@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import "./monitor-overlay.css";
 
 export const metadata: Metadata = {
   title: "Yunus Emre Yılmaz — Language Room",
