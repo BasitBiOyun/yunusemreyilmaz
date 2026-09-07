@@ -1,5 +1,5 @@
-import { RoomExperience } from "@/components/room/RoomExperience";
+import { ImmersiveRoom } from "@/components/room/ImmersiveRoom";
 
 export default function HomePage() {
-  return <RoomExperience />;
+  return <ImmersiveRoom />;
 }
