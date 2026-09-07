@@ -1,5 +1,5 @@
-import { LanguageRoom } from "@/components/LanguageRoom";
+import { RoomExperience } from "@/components/room/RoomExperience";
 
 export default function HomePage() {
-  return <LanguageRoom />;
+  return <RoomExperience />;
 }

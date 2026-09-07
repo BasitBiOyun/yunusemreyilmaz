@@ -1,179 +1,131 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import { AnimatePresence, motion } from "motion/react";
-import { useEffect, useMemo, useState } from "react";
-import { roomSections, sectionById } from "@/data/content";
+import { useEffect, useState } from "react";
 
-const objects = [
-  { id: "teaching", className: "whiteboard", label: "Teaching" },
-  { id: "translation", className: "notebook", label: "Translation" },
-  { id: "squadindex", className: "laptop", label: "Squad Index" },
-  { id: "reflect", className: "camera", label: "Reflect & Shoot" },
-  { id: "youtube", className: "microphone", label: "YouTube" },
-  { id: "x", className: "phone", label: "X / Twitter" },
-  { id: "library", className: "bookshelf", label: "Library" },
-  { id: "about", className: "frame", label: "About" },
-] as const;
+export type RoomView = "room" | "monitor";
+
+const RoomCanvas = dynamic(
+  () => import("@/components/room/RoomCanvas").then((module) => module.RoomCanvas),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="room-loading" role="status">
+        <span className="room-loading-dot" />
+        <span>Preparing the room</span>
+      </div>
+    ),
+  },
+);
 
 export function LanguageRoom() {
   const [entered, setEntered] = useState(false);
-  const [activeId, setActiveId] = useState<string | null>(null);
-  const activeSection = useMemo(() => (activeId ? sectionById[activeId] : null), [activeId]);
+  const [view, setView] = useState<RoomView>("room");
+  const [section, setSection] = useState("overview");
 
   useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") setActiveId(null);
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      if (view === "monitor") {
+        setView("room");
+        return;
+      }
+      if (entered) setEntered(false);
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, []);
+
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [entered, view]);
+
+  const focusMonitor = (nextSection = "overview") => {
+    setSection(nextSection);
+    setView("monitor");
+  };
 
   return (
-    <main className="site-shell">
-      <AnimatePresence mode="wait">
+    <main className="language-room-shell">
+      <RoomCanvas
+        active={entered}
+        view={view}
+        section={section}
+        onSectionChange={setSection}
+        onFocusMonitor={focusMonitor}
+        onReturnToRoom={() => setView("room")}
+      />
+
+      <AnimatePresence>
         {!entered ? (
           <motion.section
-            key="intro"
-            className="intro-screen"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0, scale: 1.02 }}
-            transition={{ duration: 0.5 }}
+            className="entry-layer"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.75, ease: [0.22, 1, 0.36, 1] }}
           >
-            <div className="intro-grain" />
+            <div className="entry-vignette" />
             <motion.div
-              className="intro-card"
-              initial={{ y: 24, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ delay: 0.12, duration: 0.55 }}
+              className="entry-copy"
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.18, ease: [0.22, 1, 0.36, 1] }}
             >
-              <p className="eyebrow">Language Room</p>
-              <h1>Yunus Emre Yılmaz</h1>
-              <p className="intro-role">English Teacher · Translator · Builder</p>
-              <p className="intro-copy">
-                Teaching, language work, football data, media and creative projects gathered in one working room.
-              </p>
-              <button className="enter-button" onClick={() => setEntered(true)}>
-                Enter the room
+              <p className="entry-kicker">Yunus Emre Yılmaz</p>
+              <h1>
+                Language <em>Room</em>
+              </h1>
+              <p className="entry-role">English teacher · translator · builder</p>
+              <button
+                className="entry-button"
+                onClick={() => {
+                  setEntered(true);
+                  setView("room");
+                }}
+              >
+                <span>Enter the room</span>
                 <span aria-hidden="true">↗</span>
               </button>
             </motion.div>
-            <div className="intro-footer">A personal workspace, not a conventional portfolio.</div>
+            <p className="entry-note">An interactive workspace for teaching, language, data and creative work.</p>
           </motion.section>
-        ) : (
-          <motion.section
-            key="room"
-            className="room-page"
+        ) : null}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {entered && view === "room" ? (
+          <motion.div
+            className="room-hud"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ duration: 0.45 }}
+            exit={{ opacity: 0 }}
+            transition={{ delay: 0.45, duration: 0.45 }}
           >
-            <header className="room-header">
+            <div className="room-hud-brand">
+              <span>YY</span>
               <div>
-                <span className="room-kicker">Yunus Emre Yılmaz</span>
                 <strong>Language Room</strong>
+                <small>Move the pointer. Select an object.</small>
               </div>
-              <button className="reset-button" onClick={() => setEntered(false)}>
-                Exit room
-              </button>
-            </header>
-
-            <div className="room-stage-wrap">
-              <motion.div
-                className="room-stage"
-                initial={{ scale: 1.025, y: 8 }}
-                animate={{ scale: 1, y: 0 }}
-                transition={{ type: "spring", stiffness: 90, damping: 18 }}
-              >
-                <div className="room-light" />
-                <div className="wall-shadow" />
-                <div className="floor" />
-                <div className="desk" />
-                <div className="desk-edge" />
-                <div className="lamp">
-                  <span className="lamp-head" />
-                  <span className="lamp-neck" />
-                  <span className="lamp-base" />
-                  <span className="lamp-glow" />
-                </div>
-
-                {objects.map((object, index) => (
-                  <motion.button
-                    key={object.id}
-                    className={`room-object ${object.className}`}
-                    onClick={() => setActiveId(object.id)}
-                    aria-label={`Open ${object.label}`}
-                    initial={{ opacity: 0, y: 14 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.08 + index * 0.045 }}
-                    whileHover={{ y: -4, scale: 1.025 }}
-                    whileTap={{ scale: 0.985 }}
-                  >
-                    <span className="object-art" aria-hidden="true" />
-                    <span className="object-label">{object.label}</span>
-                  </motion.button>
-                ))}
-
-                <div className="room-note note-one">teach · translate · build</div>
-                <div className="room-note note-two">ideas in progress</div>
-                <div className="rug" />
-              </motion.div>
             </div>
+            <button className="room-exit" onClick={() => setEntered(false)}>
+              Exit
+            </button>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
 
-            <div className="mobile-sections" aria-label="Portfolio sections">
-              {roomSections.map((section) => (
-                <button key={section.id} onClick={() => setActiveId(section.id)}>
-                  <span>{section.eyebrow}</span>
-                  <strong>{section.label}</strong>
-                </button>
-              ))}
-            </div>
-
-            <p className="room-hint">Select an object in the room to explore the work behind it.</p>
-
-            <AnimatePresence>
-              {activeSection ? (
-                <motion.div
-                  className="panel-backdrop"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  onMouseDown={(event) => {
-                    if (event.currentTarget === event.target) setActiveId(null);
-                  }}
-                >
-                  <motion.aside
-                    className="detail-panel"
-                    initial={{ x: 48, opacity: 0, scale: 0.98 }}
-                    animate={{ x: 0, opacity: 1, scale: 1 }}
-                    exit={{ x: 48, opacity: 0, scale: 0.98 }}
-                    transition={{ type: "spring", stiffness: 260, damping: 28 }}
-                  >
-                    <button className="panel-close" onClick={() => setActiveId(null)} aria-label="Close panel">
-                      ×
-                    </button>
-                    <p className="panel-eyebrow">{activeSection.eyebrow}</p>
-                    <h2>{activeSection.title}</h2>
-                    <p className="panel-description">{activeSection.description}</p>
-                    <div className="panel-rule" />
-                    <ul>
-                      {activeSection.bullets.map((bullet) => (
-                        <li key={bullet}>{bullet}</li>
-                      ))}
-                    </ul>
-                    {activeSection.link ? (
-                      <a href={activeSection.link.href} target="_blank" rel="noreferrer" className="panel-link">
-                        {activeSection.link.label} <span aria-hidden="true">↗</span>
-                      </a>
-                    ) : (
-                      <span className="panel-coming">More detailed content will be added here.</span>
-                    )}
-                  </motion.aside>
-                </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </motion.section>
-        )}
+      <AnimatePresence>
+        {entered && view === "monitor" ? (
+          <motion.button
+            className="monitor-back"
+            onClick={() => setView("room")}
+            initial={{ opacity: 0, x: -12 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -12 }}
+            transition={{ delay: 0.35 }}
+          >
+            <span aria-hidden="true">←</span> Back to room
+          </motion.button>
+        ) : null}
       </AnimatePresence>
     </main>
   );

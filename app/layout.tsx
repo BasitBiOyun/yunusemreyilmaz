@@ -4,7 +4,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Yunus Emre Yılmaz — Language Room",
   description:
-    "English teacher, translator and builder. Teaching, language work, Squad Index, Reflect & Shoot and media projects.",
+    "An interactive 3D workspace for English teaching, translation, Squad Index, Reflect & Shoot and media projects.",
 };
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
