@@ -1,5 +1,3 @@
-import { LanguageRoom } from "@/components/LanguageRoom";
-
 export default function HomePage() {
-  return <LanguageRoom />;
+  return <main style={{ minHeight: "100vh", background: "#080a09" }} />;
 }
