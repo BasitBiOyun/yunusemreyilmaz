@@ -1,3 +1,5 @@
+import { RoomExperience } from "@/components/room/RoomExperience";
+
 export default function HomePage() {
-  return <main style={{ minHeight: "100vh", background: "#080a09" }} />;
+  return <RoomExperience />;
 }
